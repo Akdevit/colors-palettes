@@ -14,10 +14,18 @@ fs.readFile("color_palettes.json", (err, data) => {
   colorPalettes = JSON.parse(data);
 });
 
+// Helper function to limit color variants to 4
+const limitColorVariants = (palette) => {
+  return {
+    ...palette,
+    colors: palette.colors.slice(0, 4),
+  };
+};
+
 // Endpoint to get all color palettes with pagination
 app.get("/palettes", (req, res) => {
   const page = parseInt(req.query.page, 10) || 1; // default to page 1
-  const limit = parseInt(req.query.limit, 10) || 10; // default to 10 palettes per page
+  const limit = parseInt(req.query.limit, 10) || 4; // default to 4 palettes per page
 
   if (page < 1 || limit < 1) {
     return res.status(400).send("Page and limit must be positive integers.");
@@ -36,7 +44,7 @@ app.get("/palettes", (req, res) => {
     totalPalettes: colorPalettes.length,
   };
 
-  results.results = colorPalettes.slice(startIndex, endIndex);
+  results.results = colorPalettes.slice(startIndex, endIndex).map(limitColorVariants);
 
   if (endIndex < colorPalettes.length) {
     results.next = {
@@ -59,7 +67,7 @@ app.get("/palettes", (req, res) => {
 app.get("/palette/:index", (req, res) => {
   const index = parseInt(req.params.index, 10);
   if (index >= 0 && index < colorPalettes.length) {
-    res.json(colorPalettes[index]);
+    res.json(limitColorVariants(colorPalettes[index]));
   } else {
     res.status(404).send("Palette not found");
   }
